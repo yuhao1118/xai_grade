@@ -1,0 +1,234 @@
+.ant-card-small > .ant-card-body {
+  padding: 0px 8px !important;
+}
+
+.ant-card-head-title {
+  span {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.45);
+    margin-right: 8px;
+  }
+}
+
+.query-brick {
+  h5 {
+    display: flex;
+    align-items: center;
+    font-weight: 500 !important;
+    padding-bottom: 10px;
+
+    .icon {
+      font-size: 32px;
+      color: #1890ff;
+      margin-right: 12px;
+    }
+  }
+}
+
+.data-brick {
+  .ant-card-body {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .information {
+    width: 50%;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    overflow-y: scroll;
+
+    &::-webkit-scrollbar {
+      -webkit-appearance: none;
+      width: 7px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border-radius: 4px;
+      background-color: rgba(0, 0, 0, 0.5);
+      box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
+    }
+    .data-row {
+      width: 33.3%;
+      @media (max-width: 768px) {
+        width: 50%;
+      }
+      @media (max-width: 576px) {
+        width: 100%;
+      }
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      height: 30px;
+      padding-right: 20px;
+
+      button {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        .icon {
+          font-size: 18px;
+          height: 18px;
+          margin-left: 10px;
+          color: #73d13d;
+        }
+      }
+    }
+  }
+
+  .prediction {
+    padding-left: 32px;
+    width: 50%;
+    display: flex;
+    flex-direction: row;
+
+    .chart {
+      flex: 1.5;
+    }
+
+    .predict-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+
+      .icon {
+        font-size: 14px;
+        color: rgba(0, 0, 0, 0.45);
+      }
+
+      .predict-title {
+        font-size: 16px;
+        font-weight: 500;
+        color: rgba(0, 0, 0, 0.85);
+        line-height: 24px;
+      }
+
+      .predict-class {
+        font-size: 38px;
+        line-height: 48px;
+        font-weight: 500;
+      }
+
+      .model-info {
+        font-size: 16px;
+        line-height: 24px;
+        color: #8c8c8c;
+      }
+    }
+  }
+}
+
+.shap-brick {
+  margin-top: 20px !important;
+
+  .ant-card-body {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .shap-left {
+    width: 50%;
+  }
+
+  .shap-right {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    padding-left: 32px;
+    justify-content: space-evenly;
+
+    .ant-divider {
+      margin: 4px 0;
+    }
+
+    .shap-general {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 22px;
+    }
+
+    .shap-text-container {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+
+      .shap-text {
+        width: calc(100% - 64px);
+        display: flex;
+        flex-direction: column;
+        flex-wrap: wrap;
+        .shap-text-title {
+          font-size: 16px;
+          font-weight: 500;
+          line-height: 24px;
+        }
+        .shap-text-content {
+          font-size: 16px;
+          font-weight: 400;
+          line-height: 24px;
+          color: rgba(0, 0, 0, 0.45);
+        }
+      }
+
+      .indicator {
+        height: 24px;
+        padding: 0 4px;
+        box-sizing: border-box;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        span {
+          margin-right: 4px;
+          font-size: 17px;
+        }
+
+        &.red {
+          background: rgba(234, 51, 86, 0.05);
+          border: 1px solid #ea3356;
+          color: #ea3356;
+        }
+
+        &.green {
+          background: rgba(73, 216, 73, 0.05);
+          border: 1px solid #49d65b;
+          color: #49d65b;
+        }
+      }
+    }
+  }
+}
+
+.cf-brick {
+  margin-top: 20px !important;
+
+  .cf-header-extra {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .extra-select {
+      min-width: 70px;
+    }
+
+    .extra-text {
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 22px;
+      margin-right: 8px;
+    }
+
+    .setting-btn {
+      width: 32px !important;
+      padding: 0 8px !important;
+
+      .setting-icon {
+        font-size: 16px;
+        color: rgba(0, 0, 0, 0.45);
+      }
+    }
+  }
+}
