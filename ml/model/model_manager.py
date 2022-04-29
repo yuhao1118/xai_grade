@@ -123,13 +123,14 @@ class PytorchModelManager(ModelManager):
         report_df = self._dataset.inverse_preprocess(np.concatenate((x, y), axis=1))
         report_df[self._prediction] = self._dataset.inverse_preprocess_y(pred)
 
-        return report_df
+        pred[:, [2, 3]] = pred[:, [3, 2]]
+        return report_df, pred
 
     def report_on_instance(self, index):
         """Generate the report to an instance in the dataset. 
         The report includes (features, target, prediction)."""
         instances = self._dataset.get_subset(index=index, preprocess=False)
-        report_df = self.report(instances[self._dataset.features], instances[self._dataset.target])
+        report_df, _ = self.report(instances[self._dataset.features], instances[self._dataset.target])
         report_df[self._dataset.features] = instances[self._dataset.features]
         report_df[self._dataset.target] = instances[self._dataset.target]
         return report_df.set_index(instances.index)

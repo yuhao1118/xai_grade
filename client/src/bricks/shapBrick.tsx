@@ -16,14 +16,18 @@ import {
   ChartData,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { getSHAPExplaination } from '@src/__mock__/shap';
+// import { getSHAPExplanation as _getSHAPExplanation } from '@src/__mock__/shap';
+import { getSHAPExplanation } from '@src/api';
 import './index.less';
+import { useCommonContext } from '@src/context/common';
+import { accumSumArray } from '@src/utils/common';
 
 const TextShap: React.FC<{
   featureName: string;
   featureValue: string | number;
   shapValue: number;
 }> = ({ featureName, featureValue, shapValue }) => {
+  let _shapValue = Math.abs(shapValue * 100).toFixed(2);
   return (
     <div className="shap-text-container">
       <div className="shap-text">
@@ -31,13 +35,13 @@ const TextShap: React.FC<{
         <div className="shap-text-content">
           {featureName} being {featureValue}{' '}
           {shapValue > 0 ? 'increases' : 'decreases'} the prediction probability
-          by {Math.abs(shapValue * 100)}%.
+          by {_shapValue}%.
         </div>
       </div>
 
       <div className={`indicator ${shapValue > 0 ? 'red' : 'green'}`}>
         {shapValue > 0 ? <UpCircleFilled /> : <DownCircleFilled />}
-        {Math.abs(shapValue * 100)}%
+        {_shapValue}%
       </div>
     </div>
   );
@@ -56,12 +60,12 @@ const SHAPBrick: React.FC = () => {
   const options = {
     indexAxis: 'y' as const,
     responsive: true,
+    scales: {
+      xAxes: { beginAtZero: false },
+    },
     plugins: {
       legend: {
         display: false,
-      },
-      datalabels: {
-        color: '#36A2EB',
       },
     },
   };
@@ -71,32 +75,86 @@ const SHAPBrick: React.FC = () => {
     datasets: [],
   });
 
-  const [chartType, setChartType] = useState<'bar' | 'waterfall' | 'force'>(
-    'bar'
-  );
+  const {
+    state: { queryInstance, prediction },
+  } = useCommonContext();
+
+  const [chartType, setChartType] = useState<'bar' | 'waterfall'>('bar');
+  const [shapValues, setShapValues] = useState<{
+    base_value: number;
+    pred_class: string;
+    values: number[];
+    features: string[];
+    all_features: string[];
+    data: any;
+  }>({
+    base_value: 0,
+    pred_class: '--',
+    values: [],
+    features: [],
+    all_features: [],
+    data: {},
+  });
 
   useEffect(() => {
-    getSHAPExplaination().then((res: any) => {
-      const features = (res.features as string[]).map((item, index) =>
-        res.data[index] != null ? `${item}=${res.data[index]}` : item
-      );
-      const bgColors = (res.values as number[]).map((item) =>
-        item > 0 ? 'rgba(255, 99, 132, 0.5)' : 'rgba(53, 162, 235, 0.5)'
-      );
-      const dataset = {
+    getSHAPExplanation(queryInstance).then((res: any) => {
+      setShapValues(res);
+    });
+  }, [queryInstance]);
+
+  useEffect(() => {
+    const features = (shapValues.features as string[]).map((item, index) =>
+      shapValues.data[index] != null
+        ? `${item}=${shapValues.data[index]}`
+        : item
+    );
+    const bgColors = (shapValues.values as number[]).map((item) =>
+      item > 0 ? 'rgba(255, 99, 132, 0.5)' : 'rgba(53, 162, 235, 0.5)'
+    );
+    let dataset = {
+      labels: [] as string[],
+      datasets: [] as any[],
+    };
+
+    if (chartType === 'bar') {
+      dataset = {
         labels: features,
         datasets: [
           {
             label: 'Shap Values',
-            data: res.values,
+            data: shapValues.values,
             backgroundColor: bgColors,
           },
         ],
       };
-      console.log('Dataset', dataset);
-      setData(dataset);
-    });
-  }, []);
+    } else if (chartType === 'waterfall') {
+      const accumSHAPValues = accumSumArray(
+        [shapValues['base_value']].concat([...shapValues.values].reverse())
+      );
+
+      const topSHAPValues = accumSHAPValues
+        .slice(1, accumSHAPValues.length)
+        .reverse();
+      const bottomSHAPValues = accumSHAPValues
+        .slice(0, accumSHAPValues.length - 1)
+        .reverse();
+
+      dataset = {
+        labels: features,
+        datasets: [
+          {
+            label: 'Shap Values',
+            data: topSHAPValues.map((item, index) => [
+              bottomSHAPValues[index],
+              item,
+            ]),
+            backgroundColor: bgColors,
+          },
+        ],
+      };
+    }
+    setData(dataset);
+  }, [shapValues, chartType]);
 
   return (
     <Card
@@ -120,35 +178,70 @@ const SHAPBrick: React.FC = () => {
           onChange={(e) => {
             setChartType(e.target.value);
           }}
+          defaultValue="bar"
         >
           <Radio value={'bar'}>Bar chart</Radio>
           <Radio value={'waterfall'}>Waterfall chart</Radio>
-          <Radio value={'force'}>Force chart</Radio>
         </Radio.Group>
         {chartType === 'bar' && <Bar options={options} data={data} />}
-        {chartType === 'waterfall' && <Bar options={options} data={data} />}
-        {chartType === 'force' && (
-          <iframe
-            style={{
-              display: 'block',
-              width: '100%',
-              height: '100%',
-              border: 'none',
-            }}
-            title="shap_force"
-            src="http://localhost:7777/api/shap_values"
-          ></iframe>
+        {chartType === 'waterfall' && (
+          <Bar
+            options={
+              {
+                ...options,
+                plugins: {
+                  legend: {
+                    display: false,
+                  },
+                  tooltip: {
+                    display: false,
+                    callbacks: {
+                      label: (tooltipItem: any) => {
+                        return tooltipItem.raw[1] - tooltipItem.raw[0];
+                      },
+                    },
+                  },
+                },
+              } as any
+            }
+            data={data}
+          />
         )}
       </div>
       <div className="shap-right">
         <div className="shap-general">
-          The probabilty of being Grade C is 94.9%. G1, Fjob and G2 are the
-          three most important factors.
+          • The probabilty of being Grade {shapValues['pred_class']} is{' '}
+          {(Math.max(...prediction.predictionProb) * 100).toFixed(2)}% whereas
+          the average probability on this grade is{' '}
+          {(shapValues['base_value'] * 100).toFixed(2)}%.
+        </div>
+        <div className="shap-general">
+          • {shapValues['all_features'][0]}, {shapValues['all_features'][1]} and{' '}
+          {shapValues['all_features'][2]} are the three most important features.
+        </div>
+        <div className="shap-general">
+          • {shapValues['all_features'][shapValues['all_features'].length - 3]},{' '}
+          {shapValues['all_features'][shapValues['all_features'].length - 2]}{' '}
+          and{' '}
+          {shapValues['all_features'][shapValues['all_features'].length - 1]}{' '}
+          are the three least important features.
         </div>
         <Divider />
-        <TextShap featureName="G1" featureValue={72} shapValue={0.22} />
-        <TextShap featureName="Fjob" featureValue="teacher" shapValue={0.19} />
-        <TextShap featureName="G2" featureValue={68} shapValue={0.15} />
+        <TextShap
+          featureName={shapValues['all_features'][0]}
+          featureValue={(queryInstance as any)[shapValues['all_features'][0]]}
+          shapValue={shapValues['values'][0]}
+        />
+        <TextShap
+          featureName={shapValues['all_features'][1]}
+          featureValue={(queryInstance as any)[shapValues['all_features'][1]]}
+          shapValue={shapValues['values'][1]}
+        />
+        <TextShap
+          featureName={shapValues['all_features'][2]}
+          featureValue={(queryInstance as any)[shapValues['all_features'][2]]}
+          shapValue={shapValues['values'][2]}
+        />
       </div>
     </Card>
   );

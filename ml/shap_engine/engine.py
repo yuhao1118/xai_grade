@@ -2,7 +2,7 @@ from shap import Explainer, Explanation
 import numpy as np
 import pandas as pd
 import torch
-
+from ml.shap_engine.shap_explanation import SHAPExplanation
 
 class SHAPEnginePytorch:
     def __init__(self, dataset, model_manager):
@@ -68,9 +68,10 @@ class SHAPEnginePytorch:
 
         values_df = pd.DataFrame(values, columns=self._dummy_features)
         values = self._from_dummy(values_df).values
-        pred_class_names = [self._dataset.dummy_target[i] for i in pred_classes]
+        pred_class_names = [self._dataset.dummy_target[i].split('_')[1] for i in pred_classes]
 
-        res = [Explanation(values[i], base_values=base_values[i], data=data[i], feature_names=self._features) for i in range(len(X))]
+        # res = [Explanation(values[i], base_values=base_values[i], data=data[i], feature_names=self._features) for i in range(len(X))]
+        res = [SHAPExplanation(values[i], base_values=base_values[i], data=data[i], feature_names=self._features, pred_class_name=pred_class_names[i]) for i in range(len(X))]
         return res
 
     def generate_shap_explanations(self, X, preprocess=True):

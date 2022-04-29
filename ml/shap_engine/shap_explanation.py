@@ -39,6 +39,7 @@ class SHAPExplanation:
         top_k_features = [self._features[i] for i in top_k_mask[:k]]
         rest_k_feature = "{:d} other features".format(len(self._features) - k)
         res['features'] = top_k_features + [rest_k_feature]
+        res['all_features'] = [self._features[i] for i in top_k_mask]
 
         top_k_data = self._data[top_k_mask[:k]]
         rest_k_data = None # we don't care data of "other" feature

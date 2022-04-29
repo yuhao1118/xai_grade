@@ -1,6 +1,6 @@
 import { mock } from '@src/utils/common';
 
-export const getSHAPExplaination = () =>
+export const getSHAPExplanation = () =>
   mock({
     base_value: 0.2588087262443135,
     pred_class: 'A',

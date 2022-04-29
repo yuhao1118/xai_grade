@@ -156,10 +156,11 @@ class CFEnginePytorch:
             cfs = self._refine(cfs, original_X, targets, mask, n, weights, min_values, max_values)
 
             # generate report (features, target, predictions) for counterfactual examples
-            report = self._mm.report(x=cfs, y=targets, preprocess=False)
+            report, _ = self._mm.report(x=cfs, y=targets, preprocess=False)
             reports.append(report)
 
             if verbose:
+                print("report", self._target, self._prediction)
                 valid_rate = (report[self._target] == report[self._prediction]).sum() / len(report)
                 print("[{}/{}]  Epoch-{}, time cost: {:.3f}s, loss: {:.3f}, iterations: {}, "
                       "validation rate: {:.3f}".format(end_id, data_num, batch_num,

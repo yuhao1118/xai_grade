@@ -1,21 +1,41 @@
-import { Layout, Row, Col, Steps, Button } from 'antd';
-import React from 'react';
-import {
-  SHAPBrick,
-  CFBrick,
-  PerformanceBrick,
-  DataBrick,
-  QueryBrick,
-} from '../bricks';
+import { Layout, Steps, Button } from 'antd';
+import React, { useEffect } from 'react';
+import { SHAPBrick, CFBrick, DataBrick, QueryBrick } from '../bricks';
 import './main.less';
 import { useHistory } from 'react-router-dom';
+import { getUrlParams } from '@src/utils/common';
+import { useCommonContext } from '@src/context/common';
+import { getDataMeta } from '@src/api';
 
 const { Content, Header } = Layout;
 const { Step } = Steps;
 
+const stepABTest = (
+  currentStep: number,
+  desireStep: number,
+  enable: boolean
+) => {
+  if (enable) {
+    return currentStep === desireStep;
+  } else {
+    return currentStep >= desireStep;
+  }
+};
+
 const MainPage: React.FC = () => {
   const [currentStep, setCurrentStep] = React.useState(0);
   const history = useHistory();
+  const { setDataMeta } = useCommonContext();
+
+  useEffect(() => {
+    getDataMeta().then((data) => {
+      setDataMeta(data);
+    });
+  }, []);
+
+  const CLEAR_PREV_RES = getUrlParams('CLEAR_PREV_RES', window.location.href);
+  const CLEAR_PREV_RES_FLAG =
+    CLEAR_PREV_RES === '1' || CLEAR_PREV_RES === 'true';
 
   return (
     <Layout className="layout">
@@ -61,36 +81,9 @@ const MainPage: React.FC = () => {
       </Header>
       <Content className="content">
         {currentStep === 0 && <QueryBrick />}
-        {currentStep === 1 && <DataBrick />}
-        {currentStep === 2 && <SHAPBrick />}
-        {currentStep === 3 && <CFBrick />}
-
-        {/* <Row justify="center" align="top">
-          <Col
-            span={6}
-            style={{
-              height: '100vh',
-              overflowY: 'scroll',
-            }}
-          >
-            <DataBrick />
-          </Col>
-          <Col span={18}>
-            <Row gutter={[24, 24]}>
-              <Col span={24}>
-                <PerformanceBrick />
-              </Col>
-            </Row>
-            <Row>
-              <Col span={12}>
-                <SHAPBrick />
-              </Col>
-              <Col span={12}>
-                <CFBrick />
-              </Col>
-            </Row>
-          </Col>
-        </Row> */}
+        {stepABTest(currentStep, 1, CLEAR_PREV_RES_FLAG) && <DataBrick />}
+        {stepABTest(currentStep, 2, CLEAR_PREV_RES_FLAG) && <SHAPBrick />}
+        {stepABTest(currentStep, 3, CLEAR_PREV_RES_FLAG) && <CFBrick />}
       </Content>
     </Layout>
   );

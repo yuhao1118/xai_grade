@@ -44,6 +44,7 @@ def create_app(config=None):
 
     # init engine
     app.cf_engine = CFEnginePytorch(app.dataset, app.model)
+    app.shap_engine = SHAPEnginePytorch(app.dataset, app.model)
 
     app.register_blueprint(page)
     app.register_blueprint(api, url_prefix='/api')

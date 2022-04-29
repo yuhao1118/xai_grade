@@ -26,6 +26,8 @@
 }
 
 .data-brick {
+  margin-top: 20px !important;
+
   .ant-card-body {
     display: flex;
     flex-direction: row;
@@ -204,6 +206,49 @@
 
 .cf-brick {
   margin-top: 20px !important;
+
+  .cf-diff-row {
+    background-color: #feffc3;
+  }
+
+  .cf-stick-top {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 99;
+    padding: 10px 0px;
+  }
+
+  .ant-card-body {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start !important;
+    padding: 8px !important;
+
+    .cf-brick-inner {
+      width: 50%;
+      .ant-card-body {
+        padding: 0px !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center !important;
+        height: 700px;
+        overflow-y: auto;
+      }
+    }
+
+    .cf-brick-inner,
+    .cf-constraints {
+      .ant-card-body {
+        padding: 10px 0 !important;
+      }
+    }
+  }
 
   .cf-header-extra {
     display: flex;

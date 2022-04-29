@@ -4,6 +4,7 @@ from flask.json import JSONEncoder
 from flask import request, jsonify, Blueprint, current_app, Response
 
 from .helpers import trans_data_meta
+import numpy as np
 
 api = Blueprint('api', __name__)
 
@@ -59,17 +60,12 @@ def get_data_meta():
     return jsonify(data_meta)
 
 
-@api.route('/cf_meta', methods=['GET'])
-def get_cf_meta():
-    data_meta = trans_data_meta(current_app.dir_manager.dataset_meta)
-    return jsonify(data_meta)
-
-
 @api.route('/data', methods=['GET'])
 def get_data():
+    dataset = current_app.dataset
     data_df = dataset.data
     features = dataset.features
-    res = []
+    res = {}
 
     for feature in features:
         if feature in dataset.numerical_features:
@@ -82,7 +78,7 @@ def get_data():
                 labels.append(feat_max)
             
             feat_obj = {
-            'name': feature.upper(),
+            'name': feature,
             'type': 'numerical',
             'min': feat_min,
             'max': feat_max,
@@ -93,13 +89,13 @@ def get_data():
         elif feature in dataset.categorical_features:
             category_value_count = data_df[feature].value_counts()
             feat_obj = {
-            'name': feature.upper(),
+            'name': feature,
             'type': 'categorical',
             'classes': category_value_count.index.tolist(),
             'values': category_value_count.values.tolist()
             }
 
-        res.append(feat_obj)
+        res[feature] = feat_obj
         
     return jsonify(res)
 
@@ -108,8 +104,14 @@ def get_data():
 def predict_instance():
     request_params = request.get_json()
     query_instance = request_params['queryInstance']
-    pred = current_app.model.report(x=[query_instance])[current_app.dataset.prediction]
-    return str(pred.values[0])
+    report_df, pred_prob = current_app.model.report(x=[query_instance])
+    pred = report_df[current_app.dataset.prediction]
+
+    return {
+        'prediction': pred[0],
+        'predictionProb': pred_prob[0],
+        'accuracy': current_app.dir_manager.model_meta['train_accuracy']
+    }
 
 
 @api.route('/counterfactuals', methods=['GET', 'POST'])
@@ -128,9 +130,13 @@ def get_cf_instance():
         if 'extent' in r:
             r['min'], r['max'] = r['extent'][0], r['extent'][1]
     cf_range = {r["name"]: {**r} for r in range_list}
+    desired_class = current_app.dataset.target + "_" + request_params['desiredClass']
+    desired_class = (np.array(current_app.dataset.dummy_target) == desired_class) * 1
+    desired_class = np.repeat([desired_class], repeats=num, axis=0).tolist()
 
     setting = {'changeable_attr': changeable_attr, 'cf_range': cf_range,
-               'num': num, 'k': k}
+               'num': num, 'k': k, 'desired_class': desired_class}
+
 
     cfs = current_app.cf_engine.generate_counterfactual_examples([X], setting).all[
         current_app.dataset.features + [current_app.dataset.prediction]]
@@ -138,6 +144,12 @@ def get_cf_instance():
 
 
 @api.route('/shap_values', methods=['GET', 'POST'])
+def get_shap_values():
+    request_params = request.get_json()
+    X = request_params['queryInstance']
+    shap_values = current_app.shap_engine.generate_shap_explanations([X])
+    return shap_values[0].top_k(12)
+
 def display_shap_explan():
     f = open("./shap.html", 'r')
     return f.read()

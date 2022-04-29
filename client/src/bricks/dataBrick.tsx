@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Card, InputNumber, Row, Select } from 'antd';
+import { Button, Card, InputNumber, Popover, Row, Select } from 'antd';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,6 +15,9 @@ import './index.less';
 import { getData } from '@src/__mock__/data';
 import Column from 'antd/lib/table/Column';
 import { FundFilled, InfoCircleOutlined } from '@ant-design/icons';
+import { useCommonContext } from '@src/context/common';
+import { getDataDescription, getPrediction } from '@src/api';
+import { isNumber } from '@src/utils/common';
 const { Option } = Select;
 
 interface Feature {
@@ -22,39 +25,62 @@ interface Feature {
   type: 'numerical' | 'categorical';
   min?: number;
   max?: number;
-  interval?: number;
+  values?: any[];
   classes?: string[];
 }
 
-const getInputComp = (
-  feature: Feature,
-  onValueChange: (feature: string, value: string | number) => void
-): JSX.Element => {
+const options: any = {
+  responsive: true,
+  plugins: {
+    legend: {
+      display: false,
+    },
+  },
+};
+
+const PopOverContent: React.FC<{
+  feature: Feature;
+}> = ({ feature }) => {
+  if (!feature) return <></>;
+
+  let classes = feature.classes!;
+
   if (feature.type === 'numerical') {
-    return (
-      <InputNumber
-        min={feature.min!}
-        max={feature.max!}
-        defaultValue={Math.floor((feature.max! + feature.min!) / 2)}
-        onChange={(value) => onValueChange(feature.name, value)}
-      />
-    );
-  } else if (feature.type === 'categorical') {
-    return (
-      <Select
-        defaultValue={feature.classes![0]}
-        style={{ width: 120 }}
-        onChange={(value) => onValueChange(feature.name, value)}
-      >
-        {feature.classes!.map((item) => (
-          <Option key={item} value={item}>
-            {item}
-          </Option>
-        ))}
-      </Select>
-    );
+    const tempClasses = [];
+
+    for (var i = 0; i < feature.classes!.length - 1; i++) {
+      tempClasses.push(`${feature.classes![i]}-${feature.classes![i + 1]}`);
+    }
+
+    classes = tempClasses;
   }
-  return <></>;
+
+  return (
+    <Bar
+      options={{
+        ...options,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          title: {
+            display: true,
+            text: feature.name,
+          },
+        },
+      }}
+      data={{
+        labels: classes,
+        datasets: [
+          {
+            label: feature.name,
+            data: feature.values,
+            backgroundColor: 'rgba(154, 208, 245)',
+          },
+        ],
+      }}
+    />
+  );
 };
 
 const DataBrick: React.FC = () => {
@@ -67,86 +93,57 @@ const DataBrick: React.FC = () => {
     Legend
   );
 
-  const options: any = {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: false,
-      },
-    },
-  };
-  const [data, setData] = useState<ChartData<'bar', number[], unknown>[]>([]);
-  const [features, setFeatures] = useState<Feature[]>([]);
+  const {
+    state: { queryInstance },
+    setPrediction: setContextPrediction,
+  } = useCommonContext();
+  const [prediction, setPrediction] = useState<{
+    prediction: string;
+    predictionProb: number[];
+    accuracy: number;
+  }>({
+    prediction: '--',
+    predictionProb: [0, 0, 0, 0],
+    accuracy: NaN,
+  });
 
-  const onValueChange = useCallback(
-    (feature: string, value: string | number) => {
-      console.log(feature, value);
-    },
-    []
-  );
+  const [features, setFeatures] = useState<{
+    [key: string]: Feature;
+  }>({});
 
   useEffect(() => {
-    getData().then((res: any) => {
-      const _datasets: ChartData<'bar', number[], unknown>[] = res.map(
-        (resItem: any) => {
-          const bgColors = (resItem.values as number[]).map(
-            () => 'rgba(53, 162, 235, 0.5)'
-          );
-
-          let labels = null;
-          if (resItem.type === 'numerical') {
-            labels = [];
-            for (let i = 0; i < resItem.classes.length - 1; i++) {
-              labels.push(`${resItem.classes[i]}-${resItem.classes[i + 1]}`);
-            }
-          } else if (resItem.type === 'categorical') {
-            labels = resItem.classes;
-          }
-
-          const dataset = {
-            labels: resItem.classes,
-            datasets: [
-              {
-                label: resItem.name,
-                data: resItem.values,
-                backgroundColor: 'rgba(154, 208, 245)',
-              },
-            ],
-          };
-
-          return dataset;
-        }
-      );
-
+    getDataDescription().then((res: any) => {
       setFeatures(res);
-      setData(_datasets);
     });
   }, []);
+
+  useEffect(() => {
+    if (queryInstance !== null) {
+      console.log('queryInstance', JSON.stringify(queryInstance));
+      getPrediction(queryInstance).then((res: any) => {
+        setPrediction(res);
+        setContextPrediction(res);
+      });
+    }
+  }, [queryInstance]);
 
   return (
     <Card title="Information and Results" className="data-brick">
       <div className="information">
-        <div className="data-row">
-          <div>Age</div>
-          <Button type="link" size="small">
-            32
-            <FundFilled className="icon" />
-          </Button>
-        </div>
-        <div className="data-row">
-          <div>Age</div>
-          <Button type="link" size="small">
-            32
-            <FundFilled className="icon" />
-          </Button>
-        </div>
-        <div className="data-row">
-          <div>Age</div>
-          <Button type="link" size="small">
-            32
-            <FundFilled className="icon" />
-          </Button>
-        </div>
+        {queryInstance &&
+          Object.entries(queryInstance).map(([key, value]) => {
+            return (
+              <div className="data-row" key={key}>
+                <div>{key}</div>
+                <Popover content={<PopOverContent feature={features[key]} />}>
+                  <Button type="link" size="small">
+                    {isNumber(value) ? (value as number).toFixed(2) : value}
+                    <FundFilled className="icon" />
+                  </Button>
+                </Popover>
+              </div>
+            );
+          })}
       </div>
       <div className="prediction">
         <div className="chart">
@@ -157,7 +154,7 @@ const DataBrick: React.FC = () => {
               datasets: [
                 {
                   label: 'Grade class',
-                  data: [0.09, 0.97, 0.34, 0.21],
+                  data: prediction.predictionProb,
                   backgroundColor: 'rgba(154, 208, 245)',
                 },
               ],
@@ -167,27 +164,16 @@ const DataBrick: React.FC = () => {
         <div className="predict-content">
           <InfoCircleOutlined className="icon" />
           <div className="predict-title">G3 Grade Prediction</div>
-          <div className="predict-class">C</div>
-          <div className="model-info">Probability: 94.9%</div>
-          <div className="model-info">Confidence: 67.7%</div>
+          <div className="predict-class">{prediction.prediction}</div>
+          <div className="model-info">
+            Probability:
+            {(Math.max(...prediction.predictionProb) * 100).toFixed(2)}%
+          </div>
+          <div className="model-info">
+            Accuracy: {(prediction.accuracy * 100).toFixed(2)}%
+          </div>
         </div>
       </div>
-      {/* {data.map((item, index) => (
-        <Row>
-          <Card
-            size="small"
-            title={features.length > 0 ? features[index].name : ''}
-            extra={
-              features.length > 0
-                ? getInputComp(features[index], onValueChange)
-                : ''
-            }
-            style={{ width: 300 }}
-          >
-            <Bar options={options} data={item} />
-          </Card>
-        </Row>
-      ))} */}
     </Card>
   );
 };
