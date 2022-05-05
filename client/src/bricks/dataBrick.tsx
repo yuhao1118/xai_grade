@@ -38,6 +38,35 @@ const options: any = {
   },
 };
 
+const parsePredictGrade = (predictGrade: string) => {
+  let semantic: string = '';
+  let markRange: string = '';
+  switch (predictGrade) {
+    case 'A':
+      semantic = 'Excellent';
+      markRange = '>=14';
+      break;
+    case 'B':
+      semantic = 'Good';
+      markRange = '11-13';
+      break;
+    case 'C':
+      semantic = 'Fair';
+      markRange = '8-10';
+      break;
+    case 'D':
+      semantic = 'Poor';
+      markRange = '<8';
+      break;
+  }
+
+  return {
+    grade: predictGrade,
+    semantic,
+    markRange,
+  };
+};
+
 const PopOverContent: React.FC<{
   feature: Feature;
 }> = ({ feature }) => {
@@ -164,7 +193,15 @@ const DataBrick: React.FC = () => {
         <div className="predict-content">
           <InfoCircleOutlined className="icon" />
           <div className="predict-title">G3 Grade Prediction</div>
-          <div className="predict-class">{prediction.prediction}</div>
+          <div className="predict-class">
+            {`${parsePredictGrade(prediction.prediction).grade}: ${
+              parsePredictGrade(prediction.prediction).semantic
+            }`}
+          </div>
+          <div className="model-info" style={{ marginTop: '10px' }}>
+            Grade Range:
+            {`${parsePredictGrade(prediction.prediction).markRange}`}
+          </div>
           <div className="model-info">
             Probability:
             {(Math.max(...prediction.predictionProb) * 100).toFixed(2)}%

@@ -121,7 +121,7 @@ const SHAPBrick: React.FC = () => {
         labels: features,
         datasets: [
           {
-            label: 'Shap Values',
+            label: 'Feature Contribution',
             data: shapValues.values,
             backgroundColor: bgColors,
           },

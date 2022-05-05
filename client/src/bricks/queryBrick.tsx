@@ -170,7 +170,7 @@ const QueryBrick: React.FC = () => {
               0: '0 min',
               15: '15 min',
               30: '30 min',
-              60: '60 min',
+              60: '>=60 min',
             }}
           />
         </Form.Item>
@@ -188,7 +188,7 @@ const QueryBrick: React.FC = () => {
               0: '0 hour',
               2: '2 hours',
               5: '5 hours',
-              10: '10 hours',
+              10: '>=10 hours',
             }}
           />
         </Form.Item>
@@ -242,6 +242,7 @@ const QueryBrick: React.FC = () => {
         <Form.Item
           label="Absences"
           name="absences"
+          tooltip="Absence times in the last term"
           rules={[
             { required: true, message: 'Please input your abence times!' },
           ]}

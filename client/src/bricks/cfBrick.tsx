@@ -83,6 +83,10 @@ const preprocessCFRequest = (
         extent = extent.map((item: number) => item / 2.5);
       }
 
+      if (form[item.name + 'Check'] === false) {
+        extent = [queryInstance[item.name], queryInstance[item.name]];
+      }
+
       attrRange.push({
         name: item.name,
         extent,

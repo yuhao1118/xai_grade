@@ -138,7 +138,7 @@ def get_cf_instance():
                'num': num, 'k': k, 'desired_class': desired_class}
 
 
-    cfs = current_app.cf_engine.generate_counterfactual_examples([X], setting).all[
+    cfs = current_app.cf_engine.generate_counterfactual_examples([X], setting).valid[
         current_app.dataset.features + [current_app.dataset.prediction]]
     return jsonify(cfs.values.tolist())
 
